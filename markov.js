@@ -145,7 +145,28 @@ const app = createApp({
 				if (Math.random() < 1/++count)
 				   result = prop;
 			return result;
-		}
+		},
+
+		processFile() {
+			console.log('selected a file');
+			console.log(this.$refs.myFile.files[0]);
+			
+			let file = this.$refs.myFile.files[0];
+			if(!file || file.type !== 'text/plain') return;
+			
+			// Credit: https://stackoverflow.com/a/754398/52160
+			let reader = new FileReader();
+			reader.readAsText(file, "UTF-8");
+			reader.onload =  evt => {
+			  this.input = evt.target.result;
+			}
+			reader.onerror = evt => {
+				this.alert.type="danger";
+				this.alert.text = evt;
+			  console.error(evt);
+			}
+			
+		  }
 	}
 
 });

@@ -63,6 +63,13 @@
                     <div class="col-12 mt-3">
                         <textarea id="ta" v-model="input" class="form-control"></textarea>
                     </div>
+                    <div class="col-12">
+                        <button id="clear" class="btn btn-warning mb-3" @click="input=''">Clear Textbox</button>
+                        <div id="input-group">
+                            <label for="file-in" class="input-group-text">Upload Text File</label>
+                            <input id="file-in" class="form-control" type="file" ref="myFile" @change="processFile">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
