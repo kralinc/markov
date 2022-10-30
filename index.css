@@ -1,0 +1,27 @@
+.navbar {
+    background-color: #CCFFCC;
+}
+
+.nav-item {
+    margin-right: 1em;
+}
+
+.nav-item:hover {
+    font-style: italic;
+}
+
+.nav-item.selected {
+    font-weight: bold;
+}
+
+.nav-item input {
+    display: none;
+}
+
+.nav-item label {
+    display: inline-block;
+}
+
+#ta {
+    height: 300px;
+}
