@@ -38,6 +38,7 @@ const app = createApp({
 		return {
 			input: "",
 			nSymbols: 125,
+			startSym: "",
 			text: "",
 			mkChain: {},
 			page: "MDL",
@@ -63,7 +64,7 @@ const app = createApp({
 		},
 
 		genTextEvent: function() {
-			this.text = this.generateText(this.mkChain, this.nSymbols);
+			this.text = this.generateText(this.mkChain, this.nSymbols, this.startSym);
 		},
 
 		makeMarkovChain: function(text, chain) {
@@ -108,7 +109,10 @@ const app = createApp({
 			this.alert.text = "";
 
 			let text = "";
-			let previousSymbol = (init) ? init : this.pickRandomProperty(chain);
+			let previousSymbol = init;
+			if (!chain[previousSymbol]) {
+				previousSymbol = this.pickRandomProperty(chain);
+			}
 
 			if (!previousSymbol) {
 				this.alert.type = "danger";
@@ -148,11 +152,9 @@ const app = createApp({
 		},
 
 		processFile() {
-			console.log('selected a file');
 			console.log(this.$refs.myFile.files[0]);
 			
 			let file = this.$refs.myFile.files[0];
-			if(!file || file.type !== 'text/plain') return;
 			
 			// Credit: https://stackoverflow.com/a/754398/52160
 			let reader = new FileReader();
