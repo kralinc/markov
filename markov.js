@@ -75,7 +75,7 @@ const app = createApp({
 				if (!continued) {
 					chain = new Object();
 				}
-				const tokenRegex = /([\n\w]['’]*)+|\S/g;
+				const tokenRegex = /([\S]['’]*)+|\n/g;
 				const tokens = text.match(tokenRegex);
 				for (let i = 0; i < tokens.length; i++) {
 					const token = this.getLastNGrams(tokens, i);
@@ -121,14 +121,11 @@ const app = createApp({
 
 			this.alert.text = "";
 
-			let text = "";
-			let generatedTokens = [];
-			let previousSymbol = init;
-			if (!chain[previousSymbol]) {
-				previousSymbol = this.getLastNGrams(generatedTokens, 0);
-			}
+			let text = init;
+			let generatedTokens = (init) ? init.split(" ") : [];
+			let previousSymbol = this.getLastNGrams(generatedTokens, generatedTokens.length);
 
-			if (!previousSymbol) {
+			if (!chain[previousSymbol]) {
 				this.alert.type = "danger";
 				this.alert.text = "No model trained! Go to 'Train Model' to fix this.";
 				return "";
@@ -136,14 +133,14 @@ const app = createApp({
 
 			const spaceBeforeRgx = /[-,.!?:;"]/;
 			//const spaceBeforeRgx = /[-]/g;
-			for (let i = 0; i < n; i++) {
+			for (let i = generatedTokens.length; i < n; i++) {
 				let nextSymbol = chain[previousSymbol].get();
 				generatedTokens.push(nextSymbol);
 				
 				//const spaceBefore = (spaceBeforeRgx.test(previousSymbol)) ? "" : " ";
 				const spaceBefore = (spaceBeforeRgx.test(nextSymbol)) ? "" : " ";
 				nextSymbol = nextSymbol.replace("\n", "<br/>");
-				text += spaceBefore + nextSymbol;
+				text += " " + nextSymbol;
 				
 				previousSymbol = this.getLastNGrams(generatedTokens, i+1);
 				if (!chain[previousSymbol]) {
