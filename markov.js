@@ -1,5 +1,3 @@
-const { createApp } = Vue
-
 function Symbol(symbol) {
 	this.symbol = symbol;
 	this.numFollowing = 0;
@@ -32,12 +30,15 @@ function Alert() {
 	this.text = "";
 }
 
+const { createApp } = Vue
+
 const app = createApp({
 
 	data() {
 		return {
 			input: "",
 			nSymbols: 125,
+			nGrams: 2,
 			startSym: "",
 			text: "",
 			mkChain: {},
@@ -76,19 +77,19 @@ const app = createApp({
 				}
 				const tokenRegex = /([\n\w]['’]*)+|\S/g;
 				const tokens = text.match(tokenRegex);
-				for (let i = 0; i < tokens.length - 1; i++) {
-					const token = tokens[i];
+				for (let i = 0; i < tokens.length; i++) {
+					const token = this.getLastNGrams(tokens, i);
 					if (!chain.hasOwnProperty(token)) {
 						chain[token] = new Symbol(token);
 					}
-					chain[token].put(tokens[i + 1]);
+					chain[token].put(tokens[i]);
 				}
 
-				const lastToken = tokens[tokens.length - 1];
-				if (!chain[lastToken]) {
-					chain[lastToken] = new Symbol(lastToken);
-					//chain[lastToken].put(lastToken);
-				}
+				// const lastToken = this.getLastNGrams(tokens, tokens.length - 1);
+				// if (!chain[lastToken]) {
+				// 	chain[lastToken] = new Symbol(lastToken);
+				// 	//chain[lastToken].put(lastToken);
+				// }
 
 				this.alert.type = "success";
 				if (continued) {
@@ -104,14 +105,27 @@ const app = createApp({
 			}
 		},
 
+		getLastNGrams(tokens, i) {
+			let token = "";
+			for (let j = this.nGrams; j > 0; j--) {
+				if (i - j < 0) {
+					token += "[START] ";
+				}else {
+					token += tokens[i - j] + " ";
+				}
+			}
+			return token;
+		},
+
 		generateText: function(chain, n, init) {
 
 			this.alert.text = "";
 
 			let text = "";
+			let generatedTokens = [];
 			let previousSymbol = init;
 			if (!chain[previousSymbol]) {
-				previousSymbol = this.pickRandomProperty(chain);
+				previousSymbol = this.getLastNGrams(generatedTokens, 0);
 			}
 
 			if (!previousSymbol) {
@@ -120,19 +134,19 @@ const app = createApp({
 				return "";
 			}
 
-			const spaceAfterRgx = /[-,.!?:;"]/;
+			const spaceBeforeRgx = /[-,.!?:;"]/;
 			//const spaceBeforeRgx = /[-]/g;
 			for (let i = 0; i < n; i++) {
-				const nextSymbol = chain[previousSymbol].get();
+				let nextSymbol = chain[previousSymbol].get();
+				generatedTokens.push(nextSymbol);
 				
 				//const spaceBefore = (spaceBeforeRgx.test(previousSymbol)) ? "" : " ";
-				const spaceAfter = (spaceAfterRgx.test(nextSymbol)) ? "" : " ";
-				previousSymbol = previousSymbol.replace("\n", "<br/>");
-				text += previousSymbol + spaceAfter;
+				const spaceBefore = (spaceBeforeRgx.test(nextSymbol)) ? "" : " ";
+				nextSymbol = nextSymbol.replace("\n", "<br/>");
+				text += spaceBefore + nextSymbol;
 				
-				if (nextSymbol) {
-					previousSymbol = nextSymbol;
-				} else {
+				previousSymbol = this.getLastNGrams(generatedTokens, i+1);
+				if (!chain[previousSymbol]) {
 					const newSymbol = this.pickRandomProperty(chain);
 					previousSymbol = newSymbol;
 					text += "<br/>";
@@ -152,7 +166,7 @@ const app = createApp({
 		},
 
 		processFile() {
-			console.log(this.$refs.myFile.files[0]);
+			//console.log(this.$refs.myFile.files[0]);
 			
 			let file = this.$refs.myFile.files[0];
 			
