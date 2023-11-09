@@ -1,19 +1,22 @@
-function Symbol(symbol) {
-	this.symbol = symbol;
+function NGram(token) {
+	this.token = token;
 	this.numFollowing = 0;
 	this.listFollowing = new Object();
 }
 
-Symbol.prototype.put = function(symbol) {
-	if (!this.listFollowing[symbol]) {
-		this.listFollowing[symbol] = 1;
+//Add the current token to the map of tokens that follow the current ngram sequence
+NGram.prototype.put = function(token) {
+	if (!this.listFollowing[token]) {
+		this.listFollowing[token] = 1;
 	}else {
-		this.listFollowing[symbol] += 1;
+		this.listFollowing[token] += 1;
 	}
 	this.numFollowing++;
 }
 
-Symbol.prototype.get = function() {
+//Get a random token that comes after the previous n-gram sequence
+//According to the probability that the tokens have
+NGram.prototype.get = function() {
 	let n = Math.random();
 	let cProb = 0.0;
 	for (let [key, value] of Object.entries(this.listFollowing)) {
@@ -37,26 +40,28 @@ const app = createApp({
 	data() {
 		return {
 			input: "",
-			nSymbols: 125,
+			nTokens: 125,
 			nGrams: 2,
 			startSym: "",
 			text: "",
 			mkChain: {},
 			page: "MDL",
 			alert: new Alert(),
+			books: ["Alice in Wonderland", "Frankenstein", "Metamorphasis", "Pride and Prejudice", "Sherlock Holmes"],
+			selectedBook: ""
 		}
 	},
 	watch: {
-		page: function() {
+		page() {
 			this.alert.text = "";
 		},
 	},
 	methods: {
-		toHTML: function(text) {
+		toHTML(text) {
 			return `<span>${text}</span>`;
 		},
 
-		makeChainEvent: function(continued) {
+		makeChainEvent(continued) {
 			let prevChain = null;
 			if (continued) {
 				prevChain = this.mkChain;
@@ -64,11 +69,11 @@ const app = createApp({
 			this.mkChain = this.makeMarkovChain(this.input, prevChain);
 		},
 
-		genTextEvent: function() {
-			this.text = this.generateText(this.mkChain, this.nSymbols, this.startSym);
+		genTextEvent() {
+			this.text = this.generateText(this.mkChain, this.nTokens, this.startSym);
 		},
 
-		makeMarkovChain: function(text, chain) {
+		makeMarkovChain(text, chain) {
 			try {
 				this.alert.text = "";
 				let continued = chain;
@@ -80,16 +85,10 @@ const app = createApp({
 				for (let i = 0; i < tokens.length; i++) {
 					const token = this.getLastNGrams(tokens, i);
 					if (!chain.hasOwnProperty(token)) {
-						chain[token] = new Symbol(token);
+						chain[token] = new NGram(token);
 					}
 					chain[token].put(tokens[i]);
 				}
-
-				// const lastToken = this.getLastNGrams(tokens, tokens.length - 1);
-				// if (!chain[lastToken]) {
-				// 	chain[lastToken] = new Symbol(lastToken);
-				// 	//chain[lastToken].put(lastToken);
-				// }
 
 				this.alert.type = "success";
 				if (continued) {
@@ -117,35 +116,47 @@ const app = createApp({
 			return token;
 		},
 
-		generateText: function(chain, n, init) {
+		generateText(chain, n, init) {
 
 			this.alert.text = "";
 
-			let text = init;
-			let generatedTokens = (init) ? init.split(" ") : [];
-			let previousSymbol = this.getLastNGrams(generatedTokens, generatedTokens.length);
-
-			if (!chain[previousSymbol]) {
+			if (!chain || Object.keys(chain).length === 0) {
 				this.alert.type = "danger";
 				this.alert.text = "No model trained! Go to 'Train Model' to fix this.";
 				return "";
 			}
 
+			let text = init;
+			let generatedNGrams = (init) ? init.split(" ") : [];
+			if (generatedNGrams.length > 0 && generatedNGrams.length < this.nGrams) {
+				this.alert.type = "danger";
+				this.alert.text = "You must enter at least as many starting symbols as n-grams (or leave the field blank).";
+				return "";
+			}
+
+			let previousNGram = this.getLastNGrams(generatedNGrams, generatedNGrams.length);
+
+			if (!chain[previousNGram]) {
+				this.alert.type = "danger";
+				this.alert.text = "The entered starting symbols do not appear in the model!";
+				return "";
+			}
+
 			const spaceBeforeRgx = /[-,.!?:;"]/;
 			//const spaceBeforeRgx = /[-]/g;
-			for (let i = generatedTokens.length; i < n; i++) {
-				let nextSymbol = chain[previousSymbol].get();
-				generatedTokens.push(nextSymbol);
+			for (let i = generatedNGrams.length; i < n; i++) {
+				let nextNGram = chain[previousNGram].get();
+				generatedNGrams.push(nextNGram);
 				
-				//const spaceBefore = (spaceBeforeRgx.test(previousSymbol)) ? "" : " ";
-				const spaceBefore = (spaceBeforeRgx.test(nextSymbol)) ? "" : " ";
-				nextSymbol = nextSymbol.replace("\n", "<br/>");
-				text += " " + nextSymbol;
+				//const spaceBefore = (spaceBeforeRgx.test(previousNGram)) ? "" : " ";
+				const spaceBefore = (spaceBeforeRgx.test(nextNGram)) ? "" : " ";
+				nextNGram = nextNGram.replace("\n", "<br/>");
+				text += " " + nextNGram;
 				
-				previousSymbol = this.getLastNGrams(generatedTokens, i+1);
-				if (!chain[previousSymbol]) {
-					const newSymbol = this.pickRandomProperty(chain);
-					previousSymbol = newSymbol;
+				previousNGram = this.getLastNGrams(generatedNGrams, i+1);
+				if (!chain[previousNGram]) {
+					const newNGram = this.pickRandomProperty(chain);
+					previousNGram = newNGram;
 					text += "<br/>";
 				}
 			}
@@ -153,7 +164,7 @@ const app = createApp({
 			return text;
 		},
 
-		pickRandomProperty: function(obj) {
+		pickRandomProperty(obj) {
 			var result;
 			var count = 0;
 			for (var prop in obj)
@@ -179,7 +190,14 @@ const app = createApp({
 			  console.error(evt);
 			}
 			
-		  }
+		},
+
+		fetchFromGutenberg() {
+			fetch(`${window.location.href}books/${this.selectedBook}.txt`,
+			{
+				method: "GET",
+			}).then(response => response.text()).then(data => this.input = data);
+		}
 	}
 
 });
