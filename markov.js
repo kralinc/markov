@@ -80,14 +80,24 @@ const app = createApp({
 				if (!continued) {
 					chain = new Object();
 				}
-				const tokenRegex = /([\S]['’]*)+|\n/g;
-				const tokens = text.match(tokenRegex);
-				for (let i = 0; i < tokens.length; i++) {
-					const token = this.getLastNGrams(tokens, i);
-					if (!chain.hasOwnProperty(token)) {
-						chain[token] = new NGram(token);
+
+				//Separate texts separated by two newlines into paragraphs
+				const paragraphRegex = /\n+\s*\n+/g;
+				const paragraphs = text.split(paragraphRegex);
+				for (let paragraph of paragraphs) {
+					if (paragraph.replace(/\\n|\\r/, "").trim() == "") {
+						continue;
 					}
-					chain[token].put(tokens[i]);
+					const tokenRegex = /([\S]['’]*)+/g;
+					const tokens = paragraph.match(tokenRegex);
+					tokens.push("[END]");
+					for (let i = 0; i < tokens.length; i++) {
+						const token = this.getLastNGrams(tokens, i);
+						if (!chain.hasOwnProperty(token)) {
+							chain[token] = new NGram(token);
+						}
+						chain[token].put(tokens[i]);
+					}
 				}
 
 				this.alert.type = "success";
@@ -117,7 +127,6 @@ const app = createApp({
 		},
 
 		generateText(chain, n, init) {
-
 			this.alert.text = "";
 
 			if (!chain || Object.keys(chain).length === 0) {
@@ -144,20 +153,25 @@ const app = createApp({
 
 			const spaceBeforeRgx = /[-,.!?:;"]/;
 			//const spaceBeforeRgx = /[-]/g;
-			for (let i = generatedNGrams.length; i < n; i++) {
+			let j = generatedNGrams.length;
+			for (let i = 0; i < n; i++) {
 				let nextNGram = chain[previousNGram].get();
 				generatedNGrams.push(nextNGram);
 				
 				//const spaceBefore = (spaceBeforeRgx.test(previousNGram)) ? "" : " ";
 				const spaceBefore = (spaceBeforeRgx.test(nextNGram)) ? "" : " ";
-				nextNGram = nextNGram.replace("\n", "<br/>");
+				nextNGram = nextNGram.replace(/\\n|\\r|(\[END\])/, "<br/>");
 				text += " " + nextNGram;
 				
-				previousNGram = this.getLastNGrams(generatedNGrams, i+1);
-				if (!chain[previousNGram]) {
-					const newNGram = this.pickRandomProperty(chain);
-					previousNGram = newNGram;
-					text += "<br/>";
+				previousNGram = this.getLastNGrams(generatedNGrams, j+1);
+				j += 1;
+				if (nextNGram == "[END]" || !chain[previousNGram]) {
+					console.log("end")
+					console.log(nextNGram);
+					console.log(previousNGram);
+					generatedNGrams = [];
+					j = 0;
+					previousNGram = this.getLastNGrams(generatedNGrams, j);
 				}
 			}
 			
