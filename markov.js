@@ -22,7 +22,7 @@ NGram.prototype.get = function() {
 	for (let [key, value] of Object.entries(this.listFollowing)) {
 		cProb += (value / this.numFollowing);
 		if (cProb > n) {
-			return key;
+			return {'text': key, 'probability': value / this.numFollowing};
 		}
 	}
 	return null;
@@ -48,7 +48,8 @@ const app = createApp({
 			page: "MDL",
 			alert: new Alert(),
 			books: ["Alice in Wonderland", "Frankenstein", "Metamorphasis", "Pride and Prejudice", "Sherlock Holmes"],
-			selectedBook: ""
+			selectedBook: "",
+			probabilityOfSentence: 0.0,
 		}
 	},
 	watch: {
@@ -81,16 +82,23 @@ const app = createApp({
 					chain = new Object();
 				}
 
-				//Separate texts separated by two newlines into paragraphs
-				const paragraphRegex = /\n+\s*\n+/g;
+				//Separate texts separated by two or more newlines (with possibly whitespace inbetween) into paragraphs
+				//This works well for the project gutenberg books but may not be optimal for all data
+				const paragraphRegex = /\n+\s+\n+/g;
 				const paragraphs = text.split(paragraphRegex);
 				for (let paragraph of paragraphs) {
+					//Skip any paragraphs that were made as only line breaks and/or whitespace
 					if (paragraph.replace(/\\n|\\r/, "").trim() == "") {
 						continue;
 					}
-					const tokenRegex = /([\S]['’]*)+/g;
+
+					//match non-whitespace with a possible line-break at the end
+					const tokenRegex = /\S+\n?/g;
 					const tokens = paragraph.match(tokenRegex);
+					//Add a terminator token to the end of each paragraph
 					tokens.push("[END]");
+
+					//Add each token to the data structure storing the model
 					for (let i = 0; i < tokens.length; i++) {
 						const token = this.getLastNGrams(tokens, i);
 						if (!chain.hasOwnProperty(token)) {
@@ -114,6 +122,8 @@ const app = createApp({
 			}
 		},
 
+		//Gets the previous nGrams tokens that were generated.
+		//If the n-gram number is more than the number of tokens generated, it pads the result with [START] tokens
 		getLastNGrams(tokens, i) {
 			let token = "";
 			for (let j = this.nGrams; j > 0; j--) {
@@ -136,6 +146,7 @@ const app = createApp({
 			}
 
 			let text = init;
+			let probability = 1.0;
 			let generatedNGrams = (init) ? init.split(" ") : [];
 			if (generatedNGrams.length > 0 && generatedNGrams.length < this.nGrams) {
 				this.alert.type = "danger";
@@ -151,30 +162,29 @@ const app = createApp({
 				return "";
 			}
 
-			const spaceBeforeRgx = /[-,.!?:;"]/;
-			//const spaceBeforeRgx = /[-]/g;
 			let j = generatedNGrams.length;
 			for (let i = 0; i < n; i++) {
-				let nextNGram = chain[previousNGram].get();
+				let nextNGramObject = chain[previousNGram].get();
+				let nextNGram = nextNGramObject.text;
+				probability *= nextNGramObject.probability;
 				generatedNGrams.push(nextNGram);
 				
-				//const spaceBefore = (spaceBeforeRgx.test(previousNGram)) ? "" : " ";
-				const spaceBefore = (spaceBeforeRgx.test(nextNGram)) ? "" : " ";
-				nextNGram = nextNGram.replace(/\\n|\\r|(\[END\])/, "<br/>");
+				//Line breaks and the terminator tokens should be represented as actual line breaks in HTML
+				nextNGram = nextNGram.replace(/\n|\r|(\[END\])/, "<br/>");
 				text += " " + nextNGram;
 				
 				previousNGram = this.getLastNGrams(generatedNGrams, j+1);
 				j += 1;
+
+				//If the chain has terminated or 
 				if (nextNGram == "[END]" || !chain[previousNGram]) {
-					console.log("end")
-					console.log(nextNGram);
-					console.log(previousNGram);
 					generatedNGrams = [];
 					j = 0;
 					previousNGram = this.getLastNGrams(generatedNGrams, j);
 				}
 			}
 			
+			this.probabilityOfSentence = probability;
 			return text;
 		},
 

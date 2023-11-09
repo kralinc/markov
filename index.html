@@ -51,6 +51,11 @@
                         </div>
                         <button id="gen" @click="genTextEvent" class="btn btn-success mt-2">Generate Text</button>
                         <div id="txt" class="mt-1" v-html="toHTML(text)"></div>
+                        <div class="row">
+                            <div class="col-12">
+                                <p>Probability of this generation: {{probabilityOfSentence}}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
