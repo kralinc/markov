@@ -176,7 +176,8 @@ const app = createApp({
 				previousNGram = this.getLastNGrams(generatedNGrams, j+1);
 				j += 1;
 
-				//If the chain has terminated or 
+				//If the chain has terminated or the value stored in previousNGram doesn't exist in the model
+				//then start generating again as if from the beginning.
 				if (nextNGram == "[END]" || !chain[previousNGram]) {
 					generatedNGrams = [];
 					j = 0;
@@ -198,8 +199,7 @@ const app = createApp({
 		},
 
 		processFile() {
-			//console.log(this.$refs.myFile.files[0]);
-			
+		
 			let file = this.$refs.myFile.files[0];
 			
 			// Credit: https://stackoverflow.com/a/754398/52160
@@ -216,7 +216,7 @@ const app = createApp({
 			
 		},
 
-		fetchFromGutenberg() {
+		fetchBook() {
 			fetch(`${window.location.href}books/${this.selectedBook}.txt`,
 			{
 				method: "GET",

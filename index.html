@@ -52,7 +52,7 @@
                         <button id="gen" @click="genTextEvent" class="btn btn-success mt-2">Generate Text</button>
                         <div id="txt" class="mt-1" v-html="toHTML(text)"></div>
                         <div class="row">
-                            <div class="col-12">
+                            <div class="col-12 mt-5">
                                 <p>Probability of this generation: {{probabilityOfSentence}}</p>
                             </div>
                         </div>
@@ -69,10 +69,10 @@
                     <div class="col-12">
                         <div class="row">
                             <div class="col-12 col-lg-3 mb-1">
-                                <button id="submit" class="btn btn-success me-2" @click="makeChainEvent(false)">New Chain</button>
+                                <button id="submit" class="btn btn-success me-2" @click="makeChainEvent(false)">New Model</button>
                             </div>
                             <div class="col-12 col-lg-3 mb-1">
-                                <button id="cont"  class="btn btn-primary" @click="makeChainEvent(true)">Continue Chain</button>
+                                <button id="cont"  class="btn btn-primary" @click="makeChainEvent(true)">Add to Model</button>
                             </div>
                             <div class="input-group col-12 col-lg-6">
                                 <label class="input-group-text" for="n-grams-input">N-Grams</label>
@@ -96,7 +96,7 @@
                             <select v-model="selectedBook" class="form-control" name="select-book">
                                 <option v-for="book in books" :value="book">{{book}}</option>
                             </select>
-                            <button class="btn btn-outline-success" @click="fetchFromGutenberg()">Fetch!</button>
+                            <button class="btn btn-outline-success" @click="fetchBook()">Fetch!</button>
                             <p>Books sourced from the wonderful <a href="https://gutenberg.org/">Project Gutenberg</a></p>
                         </div>
                     </div>
