@@ -7,6 +7,7 @@
         <link rel="stylesheet" href="index.css">
         <link rel="icon" type="image/icon" href="favicon.ico">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="markov.js" type="module"></script>
         <title>Markov Chain</title>
     </head>
 
@@ -14,7 +15,7 @@
         <div id="app">
             <nav class="navbar navbar-expand-lg navbar-light mb-3">
                 <div class="container-fluid justify-content-start">
-                    <h1 class="navbar-brand">Markov</h1>
+                    <h1 class="navbar-brand">N-Grams</h1>
                     <div id="navbarSupportedContent">
                         <ul class="navbar-nav">
                             <li class="nav-item" :class="{ 'selected' : page === 'GEN'}">
@@ -41,15 +42,20 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="input-group">
-                            <label class="input-group-text" for="numSym"># Symbols to Generate</label>
-                            <input id="numsym" name="numSym" type="number" placeholder="# symbols" class="form-control" v-model="nSymbols">
+                            <label class="input-group-text" for="numSym"># Tokens to Generate</label>
+                            <input id="numsym" name="numSym" type="number" placeholder="# symbols" class="form-control" v-model="nTokens">
                         </div>
-                        <div class="input-group mt-3">
-                            <label class="input-group-text" for="startSym">Start Symbol</label>
-                            <input id="startSym" name="startSym" type="text" placeholder="Start Symbol" class="form-control" v-model="startSym">
+                        <div class="mt-3">
+                            <label class="input-group-text" for="startSym">Start Tokens</label>
+                            <input id="startSym" name="startSym" type="text" placeholder="Start Tokens" class="form-control" v-model="startSym">
                         </div>
                         <button id="gen" @click="genTextEvent" class="btn btn-success mt-2">Generate Text</button>
                         <div id="txt" class="mt-1" v-html="toHTML(text)"></div>
+                        <div class="row">
+                            <div class="col-12 mt-5">
+                                <p>Probability of this generation: {{probabilityOfSentence}}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -61,8 +67,18 @@
                         <p>Click 'Continue Chain' to add your new text to an existing model.</p>
                     </div>
                     <div class="col-12">
-                        <button id="submit" class="btn btn-success me-2" @click="makeChainEvent(false)">New Chain</button>
-                        <button id="cont"  class="btn btn-primary" @click="makeChainEvent(true)">Continue Chain</button>
+                        <div class="row">
+                            <div class="col-12 col-lg-3 mb-1">
+                                <button id="submit" class="btn btn-success me-2" @click="makeChainEvent(false)">New Model</button>
+                            </div>
+                            <div class="col-12 col-lg-3 mb-1">
+                                <button id="cont"  class="btn btn-primary" @click="makeChainEvent(true)">Add to Model</button>
+                            </div>
+                            <div class="input-group col-12 col-lg-6">
+                                <label class="input-group-text" for="n-grams-input">N-Grams</label>
+                                <input class="form-control" name="n-grams-input" type="number" v-model="nGrams" min=1/>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-12 mt-3">
                         <textarea id="ta" v-model="input" class="form-control"></textarea>
@@ -71,14 +87,22 @@
                         <button id="clear" class="btn btn-warning mb-3" @click="input=''">Clear Textbox</button>
                         <div id="input-group">
                             <label for="file-in" class="input-group-text">Upload Text File</label>
-                            <input id="file-in" class="form-control" type="file" ref="myFile" @change="processFile">
+                            <input id="file-in" name="file-in" class="form-control" type="file" ref="myFile" @change="processFile">
+                        </div>
+                    </div>
+                    <div class="col-12 mt-2">
+                        <div id="input-group mt-2">
+                            <label class="input-group-text" for="select-book">Insert Public Domain Book</label>
+                            <select v-model="selectedBook" class="form-control" name="select-book">
+                                <option v-for="book in books" :value="book">{{book}}</option>
+                            </select>
+                            <button class="btn btn-outline-success" @click="fetchBook()">Fetch!</button>
+                            <p>Books sourced from the wonderful <a href="https://gutenberg.org/">Project Gutenberg</a></p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <script src="markov.js"></script>
     </body>
 
 </html>

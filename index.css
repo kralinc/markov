@@ -25,3 +25,11 @@
 #ta {
     height: 300px;
 }
+
+.btn {
+    width: 100%;
+}
+
+.input-group {
+    width: inherit;
+}
